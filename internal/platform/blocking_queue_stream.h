@@ -42,7 +42,8 @@ class BlockingQueueStream : public InputStream {
   ArrayBlockingQueue<ByteArray> blocking_queue_{FeatureFlags::GetInstance()
                  .GetFlags()
                  .blocking_queue_stream_queue_capacity};
-  ByteArray queue_end_{0};
+  ByteArray queue_head_;
+  ByteArray queue_end_ = ByteArray();
   bool is_writing_ = false;
   bool is_closed_ = false;
 };
