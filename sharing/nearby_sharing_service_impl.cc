@@ -346,8 +346,6 @@ void NearbySharingServiceImpl::Cleanup() {
   last_outgoing_metadata_.reset();
   locally_cancelled_share_target_ids_.clear();
 
-  disconnection_timeout_alarms_.clear();
-
   is_scanning_ = false;
   is_transferring_ = false;
   is_receiving_files_ = false;
@@ -3098,24 +3096,8 @@ void NearbySharingServiceImpl::OnOutgoingPayloadTransferUpdates(
             << TransferMetadata::StatusToString(metadata->status());
   }
 
-  // When kComplete is received from PayloadTracker, we need to wait for
-  // receiver to close connection before we know that the transfer has
-  // succeeded.  Here we delay the kComplete update until receiver disconnects.
-  // A 1 min timer is setup so that if we do not receive disconnect from
-  // receiver, we assume the transfer has failed.
   if (metadata->status() == TransferMetadata::Status::kComplete) {
-    session->DelayCompleteMetadata(*metadata);
-    auto timer = std::make_unique<ThreadTimer>(
-        *service_thread_, "disconnection_timeout_alarm",
-        kOutgoingDisconnectionDelay,
-        [this, share_target_id = session->share_target().id]() {
-          OutgoingShareSession* session =
-              GetOutgoingShareSession(share_target_id);
-          if (session != nullptr) {
-            session->DisconnectionTimeout();
-          }
-        });
-    disconnection_timeout_alarms_[session->endpoint_id()] = std::move(timer);
+    session->DelayComplete(*metadata);
     return;
   }
   // Make sure to call this before calling Disconnect, or we risk losing some
@@ -3299,9 +3281,6 @@ bool NearbySharingServiceImpl::FindDuplicateInOutgoingShareTargets(
 std::optional<ShareTarget>
 NearbySharingServiceImpl::RemoveOutgoingShareTargetWithEndpointId(
     absl::string_view endpoint_id) {
-  VLOG(1) << __func__ << ":Outgoing connection to " << endpoint_id
-          << " disconnected, cancel disconnection timer";
-  disconnection_timeout_alarms_.erase(endpoint_id);
   auto target_node = outgoing_share_target_map_.extract(endpoint_id);
   if (target_node.empty()) {
     LOG(WARNING) << __func__ << ": endpoint_id=" << endpoint_id
