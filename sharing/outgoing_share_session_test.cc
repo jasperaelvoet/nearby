@@ -38,6 +38,7 @@
 #include "sharing/common/nearby_share_enums.h"
 #include "sharing/fake_nearby_connections_manager.h"
 #include "sharing/file_attachment.h"
+#include "sharing/nearby_connection.h"
 #include "sharing/nearby_connection_impl.h"
 #include "sharing/nearby_connections_manager.h"
 #include "sharing/nearby_connections_types.h"
@@ -291,7 +292,7 @@ TEST_F(OutgoingShareSessionTest, ConnectNoDisableWifiHotspot) {
   std::vector<uint8_t> bluetooth_mac_address = {5, 6, 7, 8};
   file1_.set_size(1000000);  // 1MB
   InitSendAttachments(CreateDefaultAttachmentContainer());
-  NearbyConnectionImpl nearby_connection(device_info_, kEndpointId);
+  NearbyConnectionImpl nearby_connection(device_info_);
   connections_manager_.set_nearby_connection(&nearby_connection);
 
   session_.Connect(
@@ -319,7 +320,7 @@ TEST_F(OutgoingShareSessionTest, ConnectDisableWifiHotspot) {
   std::vector<uint8_t> bluetooth_mac_address = {5, 6, 7, 8};
   file1_.set_size(1000000);  // 1MB
   InitSendAttachments(CreateDefaultAttachmentContainer());
-  NearbyConnectionImpl nearby_connection(device_info_, kEndpointId);
+  NearbyConnectionImpl nearby_connection(device_info_);
   connections_manager_.set_nearby_connection(&nearby_connection);
 
   session_.Connect(
@@ -347,7 +348,7 @@ TEST_F(OutgoingShareSessionTest, OnConnectResultSuccessLogsSessionDuration) {
   session_.set_session_id(1234);
   std::vector<uint8_t> endpoint_info = {1, 2, 3, 4};
   std::vector<uint8_t> bluetooth_mac_address = {5, 6, 7, 8};
-  NearbyConnectionImpl nearby_connection(device_info_, kEndpointId);
+  NearbyConnectionImpl nearby_connection(device_info_);
   connections_manager_.set_nearby_connection(&nearby_connection);
   session_.Connect(
       endpoint_info, bluetooth_mac_address,
@@ -414,7 +415,7 @@ TEST_F(OutgoingShareSessionTest, SendIntroductionWithoutPayloads) {
 TEST_F(OutgoingShareSessionTest, SendIntroductionSuccess) {
   InitSendAttachments(CreateDefaultAttachmentContainer());
   session_.set_session_id(1234);
-  NearbyConnectionImpl connection(device_info_, kEndpointId);
+  NearbyConnectionImpl connection(device_info_);
   ConnectionSuccess(&connection);
   std::vector<NearbyFileHandler::FileInfo> file_infos;
   file_infos.push_back({
@@ -494,7 +495,7 @@ TEST_F(OutgoingShareSessionTest, SendIntroductionTimeout) {
       std::vector<WifiCredentialsAttachment>{});
   InitSendAttachments(std::move(container));
   session_.set_session_id(1234);
-  NearbyConnectionImpl connection(device_info_, kEndpointId);
+  NearbyConnectionImpl connection(device_info_);
   ConnectionSuccess(&connection);
   session_.CreateTextPayloads();
   EXPECT_CALL(
@@ -521,7 +522,7 @@ TEST_F(OutgoingShareSessionTest, SendIntroductionTimeoutCancelled) {
       std::vector<WifiCredentialsAttachment>{});
   InitSendAttachments(std::move(container));
   session_.set_session_id(1234);
-  NearbyConnectionImpl connection(device_info_, kEndpointId);
+  NearbyConnectionImpl connection(device_info_);
   ConnectionSuccess(&connection);
   session_.CreateTextPayloads();
   EXPECT_CALL(
@@ -557,7 +558,7 @@ TEST_F(OutgoingShareSessionTest, AcceptTransferNotConnected) {
 }
 
 TEST_F(OutgoingShareSessionTest, AcceptTransferNotReady) {
-  NearbyConnectionImpl connection(device_info_, kEndpointId);
+  NearbyConnectionImpl connection(device_info_);
   session_.set_session_id(1234);
   ConnectionSuccess(&connection);
 
@@ -572,7 +573,7 @@ TEST_F(OutgoingShareSessionTest, AcceptTransferSuccess) {
       std::vector<WifiCredentialsAttachment>{});
   InitSendAttachments(std::move(container));
   session_.set_session_id(1234);
-  NearbyConnectionImpl connection(device_info_, kEndpointId);
+  NearbyConnectionImpl connection(device_info_);
   ConnectionSuccess(&connection);
   session_.CreateTextPayloads();
   EXPECT_CALL(
@@ -663,7 +664,7 @@ TEST_F(OutgoingShareSessionTest, HandleConnectionResponseTimeoutResponse) {
 TEST_F(OutgoingShareSessionTest, HandleConnectionResponseAcceptResponse) {
   ConnectionResponseFrame response;
   response.set_status(ConnectionResponseFrame::ACCEPT);
-  NearbyConnectionImpl connection(device_info_, kEndpointId);
+  NearbyConnectionImpl connection(device_info_);
   session_.set_session_id(1234);
   ConnectionSuccess(&connection);
   EXPECT_CALL(transfer_metadata_callback_,
@@ -675,68 +676,7 @@ TEST_F(OutgoingShareSessionTest, HandleConnectionResponseAcceptResponse) {
   ASSERT_THAT(status.has_value(), IsFalse());
 }
 
-TEST_F(OutgoingShareSessionTest, SendPayloadsDisableCancellationOptimization) {
-  InitSendAttachments(CreateDefaultAttachmentContainer());
-  session_.set_session_id(1234);
-  std::vector<NearbyFileHandler::FileInfo> file_infos;
-  file_infos.push_back({
-      .size = 12355L,
-      .file_path = file1_.file_path().value(),
-  });
-  session_.CreateFilePayloads(file_infos);
-  session_.CreateTextPayloads();
-  session_.CreateWifiCredentialsPayloads();
-  MockFunction<void()> payload_transder_update_callback;
-  StrictMock<MockFunction<void(
-      std::unique_ptr<Payload>,
-      std::weak_ptr<NearbyConnectionsManager::PayloadStatusListener>)>>
-      send_payload_callback;
-  connections_manager_.set_send_payload_callback(
-      send_payload_callback.AsStdFunction());
-  EXPECT_CALL(send_payload_callback, Call(_, _))
-      .WillOnce(Invoke(
-          [this](
-              std::unique_ptr<Payload> payload,
-              std::weak_ptr<NearbyConnectionsManager::PayloadStatusListener>) {
-            payload->id = session_.attachment_payload_map().at(file1_.id());
-          }))
-      .WillOnce(Invoke(
-          [this](
-              std::unique_ptr<Payload> payload,
-              std::weak_ptr<NearbyConnectionsManager::PayloadStatusListener>) {
-            payload->id = session_.attachment_payload_map().at(text1_.id());
-          }))
-      .WillOnce(Invoke(
-          [this](
-              std::unique_ptr<Payload> payload,
-              std::weak_ptr<NearbyConnectionsManager::PayloadStatusListener>) {
-            payload->id = session_.attachment_payload_map().at(text2_.id());
-          }))
-      .WillOnce(Invoke(
-          [this](
-              std::unique_ptr<Payload> payload,
-              std::weak_ptr<NearbyConnectionsManager::PayloadStatusListener>) {
-            payload->id = session_.attachment_payload_map().at(wifi1_.id());
-          }));
-  EXPECT_CALL(mock_event_logger_,
-              Log(Matcher<const SharingLog&>(
-                  AllOf((HasCategory(EventCategory::SENDING_EVENT),
-                         HasEventType(EventType::SEND_ATTACHMENTS_START),
-                         Property(&SharingLog::send_attachments_start,
-                                  HasSessionId(1234)))))));
-  NearbyConnectionImpl connection(device_info_, kEndpointId);
-  ConnectionSuccess(&connection);
-
-  session_.SendPayloads(
-      /*enable_transfer_cancellation_optimization=*/
-      false, [](std::optional<V1Frame> frame) {},
-      payload_transder_update_callback.AsStdFunction());
-
-  auto payload_listener = session_.payload_tracker().lock();
-  EXPECT_THAT(payload_listener, IsTrue());
-}
-
-TEST_F(OutgoingShareSessionTest, SendPayloadsEnableCancellationOptimization) {
+TEST_F(OutgoingShareSessionTest, SendPayloads) {
   InitSendAttachments(CreateDefaultAttachmentContainer());
   session_.set_session_id(1234);
   std::vector<NearbyFileHandler::FileInfo> file_infos;
@@ -767,12 +707,10 @@ TEST_F(OutgoingShareSessionTest, SendPayloadsEnableCancellationOptimization) {
                          HasEventType(EventType::SEND_ATTACHMENTS_START),
                          Property(&SharingLog::send_attachments_start,
                                   HasSessionId(1234)))))));
-  NearbyConnectionImpl connection(device_info_, kEndpointId);
+  NearbyConnectionImpl connection(device_info_);
   ConnectionSuccess(&connection);
 
-  session_.SendPayloads(
-      /*enable_transfer_cancellation_optimization=*/
-      true, [](std::optional<V1Frame> frame) {},
+  session_.SendPayloads([](std::optional<V1Frame> frame) {},
       payload_transder_update_callback.AsStdFunction());
 
   auto payload_listener = session_.payload_tracker().lock();
@@ -811,12 +749,10 @@ TEST_F(OutgoingShareSessionTest, SendNextPayload) {
                          HasEventType(EventType::SEND_ATTACHMENTS_START),
                          Property(&SharingLog::send_attachments_start,
                                   HasSessionId(1234)))))));
-  NearbyConnectionImpl connection(device_info_, kEndpointId);
+  NearbyConnectionImpl connection(device_info_);
   ConnectionSuccess(&connection);
 
-  session_.SendPayloads(
-      /*enable_transfer_cancellation_optimization=*/
-      true, [](std::optional<V1Frame> frame) {},
+  session_.SendPayloads([](std::optional<V1Frame> frame) {},
       payload_transder_update_callback.AsStdFunction());
 
   EXPECT_CALL(send_payload_callback, Call(_, _))
@@ -848,7 +784,7 @@ TEST_F(OutgoingShareSessionTest, SendNextPayload) {
 }
 
 TEST_F(OutgoingShareSessionTest, ProcessKeyVerificationResultFail) {
-  NearbyConnectionImpl connection(device_info_, kEndpointId);
+  NearbyConnectionImpl connection(device_info_);
   session_.set_session_id(1234);
   ConnectionSuccess(&connection);
   session_.SetTokenForTests("1234");
@@ -864,7 +800,7 @@ TEST_F(OutgoingShareSessionTest, ProcessKeyVerificationResultFail) {
 }
 
 TEST_F(OutgoingShareSessionTest, ProcessKeyVerificationResultSuccess) {
-  NearbyConnectionImpl connection(device_info_, kEndpointId);
+  NearbyConnectionImpl connection(device_info_);
   session_.set_session_id(1234);
   ConnectionSuccess(&connection);
   session_.SetTokenForTests("1234");
@@ -880,7 +816,7 @@ TEST_F(OutgoingShareSessionTest, ProcessKeyVerificationResultSuccess) {
 }
 
 TEST_F(OutgoingShareSessionTest, DelayCompleteMetadataReceiverDisconnect) {
-  NearbyConnectionImpl connection(device_info_, kEndpointId);
+  NearbyConnectionImpl connection(device_info_);
   session_.set_session_id(1234);
   ConnectionSuccess(&connection);
   TransferMetadata complete_metadata =
@@ -898,7 +834,7 @@ TEST_F(OutgoingShareSessionTest, DelayCompleteMetadataReceiverDisconnect) {
 }
 
 TEST_F(OutgoingShareSessionTest, DelayCompleteMetadataDisconnectTimeout) {
-  NearbyConnectionImpl connection(device_info_, kEndpointId);
+  NearbyConnectionImpl connection(device_info_);
   session_.set_session_id(1234);
   std::vector<uint8_t> endpoint_info = {1, 2, 3, 4};
   std::vector<uint8_t> bluetooth_mac_address = {5, 6, 7, 8};
@@ -957,7 +893,7 @@ TEST_F(OutgoingShareSessionTest, UpdateSessionForDedupWithoutCertificate) {
 
 TEST_F(OutgoingShareSessionTest, UpdateSessionForDedupConnectedIsNoOp) {
   auto share_target_org = session_.share_target();
-  NearbyConnectionImpl connection(device_info_, kEndpointId);
+  NearbyConnectionImpl connection(device_info_);
   session_.set_session_id(1234);
   ConnectionSuccess(&connection);
   ShareTarget share_target2{
