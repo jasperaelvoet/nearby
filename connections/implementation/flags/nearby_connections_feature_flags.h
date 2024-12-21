@@ -49,7 +49,7 @@ constexpr auto kEnableInstantOnLost =
     flags::Flag<bool>(kConfigPackage, "45642180", false);
 // When true, enable multiplexing in NC.
 constexpr auto kEnableMultiplex =
-    flags::Flag<bool>(kConfigPackage, "45647946", false);
+    flags::Flag<bool>(kConfigPackage, "45647946", true);
 // Enable/Disable payload manager to skip chunk update.
 constexpr auto kEnablePayloadManagerToSkipChunkUpdate =
     flags::Flag<bool>(kConfigPackage, "45415729", true);
