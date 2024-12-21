@@ -1,0 +1,31 @@
+name: Merge upstream main branch
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Runs hourly, adjust as needed
+  workflow_dispatch: # Allows manual triggering of the workflow
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Fetch full history to allow merges
+
+      - name: Configure Git user
+        run: |
+          git config --global user.name 'Jasper Aelvoet'
+          git config --global user.email 'jasper.aelvoet@me.com'
+
+      - name: Add upstream remote and fetch
+        run: |
+          git remote add upstream https://github.com/google/nearby.git
+          git fetch upstream
+
+      - name: Merge upstream main into local main
+        run: |
+          git checkout main
+          git merge --no-edit upstream/main || echo "Merge conflict or no changes"
+          git push origin main || echo "Push failed"
