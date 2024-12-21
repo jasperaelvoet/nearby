@@ -30,13 +30,13 @@ constexpr absl::string_view kConfigPackage = "nearby";
 namespace nearby_connections_feature {
 // The timeout in millis to report peripheral device lost.
 constexpr auto kBlePeripheralLostTimeoutMillis =
-    flags::Flag<int64_t>(kConfigPackage, "45411439", 12000);
+    flags::Flag<int64_t>(kConfigPackage, "45411439", 1000);
 // When true, disable Bluetooth classic scanning.
 constexpr auto kDisableBluetoothClassicScanning =
     flags::Flag<bool>(kConfigPackage, "45639961", false);
 // Enable/Disable auto_reconnect feature.
 constexpr auto kEnableAutoReconnect =
-    flags::Flag<bool>(kConfigPackage, "45427690", false);
+    flags::Flag<bool>(kConfigPackage, "45427690", true);
 // Disable/Enable BLE v2 in Nearby Connections SDK.
 constexpr auto kEnableBleV2 =
     flags::Flag<bool>(kConfigPackage, "45401515", true);
@@ -46,10 +46,10 @@ constexpr auto kEnableGattQueryInThread =
     flags::Flag<bool>(kConfigPackage, "45415261", false);
 // When true, enable instant on lost feature.
 constexpr auto kEnableInstantOnLost =
-    flags::Flag<bool>(kConfigPackage, "45642180", false);
+    flags::Flag<bool>(kConfigPackage, "45642180", true);
 // When true, enable multiplexing in NC.
 constexpr auto kEnableMultiplex =
-    flags::Flag<bool>(kConfigPackage, "45647946", false);
+    flags::Flag<bool>(kConfigPackage, "45647946", true);
 // Enable/Disable payload manager to skip chunk update.
 constexpr auto kEnablePayloadManagerToSkipChunkUpdate =
     flags::Flag<bool>(kConfigPackage, "45415729", true);
