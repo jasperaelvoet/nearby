@@ -30,7 +30,7 @@ constexpr absl::string_view kConfigPackage = "nearby";
 namespace nearby_connections_feature {
 // The timeout in millis to report peripheral device lost.
 constexpr auto kBlePeripheralLostTimeoutMillis =
-    flags::Flag<int64_t>(kConfigPackage, "45411439", 1000);
+    flags::Flag<int64_t>(kConfigPackage, "45411439", 5000);
 // When true, disable Bluetooth classic scanning.
 constexpr auto kDisableBluetoothClassicScanning =
     flags::Flag<bool>(kConfigPackage, "45639961", false);
@@ -43,10 +43,10 @@ constexpr auto kEnableBleV2 =
 // Disable/Enable GATT query in thread in BLE V2.
 // Manual edit: setting this to false for ChromeOS rollout as well.
 constexpr auto kEnableGattQueryInThread =
-    flags::Flag<bool>(kConfigPackage, "45415261", true);
+    flags::Flag<bool>(kConfigPackage, "45415261", false);
 // When true, enable instant on lost feature.
 constexpr auto kEnableInstantOnLost =
-    flags::Flag<bool>(kConfigPackage, "45642180", true);
+    flags::Flag<bool>(kConfigPackage, "45642180", false);
 // When true, enable multiplexing in NC.
 constexpr auto kEnableMultiplex =
     flags::Flag<bool>(kConfigPackage, "45647946", false);
