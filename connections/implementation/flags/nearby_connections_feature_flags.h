@@ -43,7 +43,7 @@ constexpr auto kEnableBleV2 =
 // Disable/Enable GATT query in thread in BLE V2.
 // Manual edit: setting this to false for ChromeOS rollout as well.
 constexpr auto kEnableGattQueryInThread =
-    flags::Flag<bool>(kConfigPackage, "45415261", false);
+    flags::Flag<bool>(kConfigPackage, "45415261", true);
 // When true, enable instant on lost feature.
 constexpr auto kEnableInstantOnLost =
     flags::Flag<bool>(kConfigPackage, "45642180", true);

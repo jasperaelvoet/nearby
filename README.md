@@ -6,3 +6,4 @@ changes:
 - enabled instant on lost feature
 - enabled multiplexing
 - enabled auto reconnect
+- enabled kEnableGattQueryInThread
