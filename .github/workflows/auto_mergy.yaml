@@ -2,7 +2,7 @@ name: Merge upstream main branch
 
 on:
   schedule:
-    - cron: '0 * * * *' # Runs hourly, adjust as needed
+    - cron: '0 12 * * *' # Runs daily at 12:00 (UTC)
   workflow_dispatch: # Allows manual triggering of the workflow
 
 jobs:
