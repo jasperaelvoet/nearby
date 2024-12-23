@@ -7,3 +7,4 @@ changes:
 - enabled multiplexing
 - enabled auto reconnect
 - enabled Gatt Query In Thread
+- enabled stable endpoint id

@@ -76,7 +76,7 @@ constexpr auto kSafeToDisconnectVersion =
     flags::Flag<int64_t>(kConfigPackage, "45425841", 0);
 // When true, use stable endpoint ID.
 constexpr auto kUseStableEndpointId =
-    flags::Flag<bool>(kConfigPackage, "45639298", false);
+    flags::Flag<bool>(kConfigPackage, "45639298", true);
 
 }  // namespace nearby_connections_feature
 }  // namespace config_package_nearby
